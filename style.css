@@ -1,8 +1,9 @@
-:root{
+/* root styles and body background as you have it */
+:root {
     --main-color: rgb(233, 238, 240);
-    /* var(--main-color) to use this colour */
+    /* type */
 }
 
-body{
+body {
     background-color: var(--main-color);
 }
