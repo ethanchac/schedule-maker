@@ -1,0 +1,8 @@
+:root{
+    --main-color: rgb(233, 238, 240);
+    /* var(--main-color) to use this colour */
+}
+
+body{
+    background-color: var(--main-color);
+}
