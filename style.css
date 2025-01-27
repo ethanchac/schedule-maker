@@ -7,3 +7,13 @@
 body {
     background-color: var(--main-color);
 }
+.schedule-top{
+    display: flex;
+    justify-content: space-between;
+}
+.time-right{
+    background-color: white;
+}
+.time-left{
+    background-color: white;
+}
