@@ -3,9 +3,34 @@
     --main-color: rgb(233, 238, 240);
     /* type */
 }
-
+.main{
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 10px;
+}
 body {
     background-color: var(--main-color);
+}
+.nav-left{
+    display: flex;
+    flex-direction: column;
+    max-width: 900px;
+    max-height: 600px;
+    gap: 10px;
+    margin: 50px;
+
+}
+.nav-right{
+    background-color: white;
+    max-width: 400px;
+    max-height: 500px;
+    margin-top: 120px;
+
+}
+.schedule-creator{
+    height: 50%;
+    width: 50px;
 }
 .schedule-top{
     display: flex;
@@ -13,7 +38,19 @@ body {
 }
 .time-right{
     background-color: white;
+    max-height: 300px;
+    height: 50px;
+    width: 200px;
+    
 }
 .time-left{
     background-color: white;
+    max-height: 300px;
+    height: 2fr;
+    width: 200px;
+}
+.schedule-calendar{
+    height: 500px;
+    background-color: white;
+    margin: 20px;
 }
