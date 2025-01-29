@@ -1,4 +1,6 @@
 let hoursInSchedule = 0;
+let daysOfWeek = 7;
+const container = document.querySelector(".schedule-calendar");
 
 function populateTimeOptions() {
     const startTimeSelect = document.getElementById('startTime');
@@ -14,6 +16,7 @@ function populateTimeOptions() {
 
 
 function applyHours() {
+    container.innerHTML = "";
     const startTime = document.getElementById('startTime').value;
     const endTime = document.getElementById('endTime').value;
     
@@ -30,8 +33,26 @@ function applyHours() {
     }else{
         endingHours = Number(endTime.substring(0,1));
     }
-    hoursInSchedule = endingHours + 12 - startingHours;
 
+    //This variable is important for schedule building
+    hoursInSchedule = endingHours + 12 - startingHours;
+    createCalendar();
+
+}
+
+function createCalendar(){
+    for(let i = 0; i < hoursInSchedule * daysOfWeek; i++){
+        const square = document.createElement("div");
+        let squareWidth = container.offsetWidth / daysOfWeek;
+        let squareHeight = container.offsetHeight / hoursInSchedule;
+        square.style.width = `${squareWidth}px`;
+        square.style.height = `${squareHeight}px`;
+        square.className = "square";
+
+        container.appendChild(square);
+
+    }
+    console.log(hoursInSchedule);
 }
 
 window.onload = function() {
