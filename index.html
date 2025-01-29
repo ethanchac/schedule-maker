@@ -11,22 +11,21 @@
         <div class="nav-left">
             <div class="schedule-main">
                 <div class="schedule-top">
-                    <!--
+                    
                     <input type="month" class="time-month"></input>
-                    <button onclick="toggleTimeSelector()">Set Working Hours</button>
-                    <div id="timeSelector" style="display:none;">
-                        Start Time:
-                        <select id="startTime">
-                        </select>
-                        End Time:
-                        <select id="endTime">
-        
-                        </select>
-                        <button onclick="applyHours()">Apply</button>
-                    </div>
-                    -->
+                    
+                    
                     <div class="time-left"></div>
-                    <div class="time-right"></div>
+                    <div class="time-right">
+                        <div id="timeSelector" >
+                            <select id="startTime">
+                            </select>
+                            To
+                            <select id="endTime">
+                            </select>
+                            <button onclick="applyHours()">Apply</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="schedule-calendar"></div>
             </div>
