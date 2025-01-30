@@ -45,12 +45,16 @@ function createCalendar(){
         const square = document.createElement("div");
         let squareWidth = container.offsetWidth / daysOfWeek;
         let squareHeight = container.offsetHeight / hoursInSchedule;
+        squareWidth = Math.floor(squareWidth) - 2;
+        squareHeight = Math.floor(squareHeight) - 2;
         square.style.width = `${squareWidth}px`;
         square.style.height = `${squareHeight}px`;
         square.className = "square";
-
+        
         container.appendChild(square);
 
+        console.log(square.style.width);
+        console.log(container.offsetWidth);
     }
     console.log(hoursInSchedule);
 }
