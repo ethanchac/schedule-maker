@@ -1,6 +1,6 @@
 let hoursInSchedule = 0;
 let daysOfWeek = 7;
-const container = document.querySelector(".schedule-calendar");
+const container = document.querySelector(".calendar");
 const settingsButton = document.querySelector("#settings");
 const addPersonButton = document.querySelector("#add-person");
 const scheduledPeople = document.querySelector(".scheduled-people");
@@ -84,6 +84,7 @@ addPersonButton.addEventListener("click", function () {
                 nameContainer.style.display = "flex"; // Use flexbox for alignment
                 nameContainer.style.alignItems = "center"; // Vertically center items
                 nameContainer.style.marginBottom = "5px"; // Add some spacing between entries
+                nameContainer.className = "scheduled-people-div";
 
                 // Add the name to the container
                 const nameElement = document.createElement("div");

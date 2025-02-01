@@ -40,6 +40,12 @@ body {
     margin-top: 20px;
     background-color: white;
 }
+.scheduled-people-div{
+    display: flex;
+    justify-content: space-between;
+    margin-right: 10px;
+    margin-left: 10px;
+}
 .schedule-top{
     display: flex;
     justify-content: space-between;
@@ -58,6 +64,13 @@ body {
     background-color: white;
     margin: 5px;
 }
+.calendar{
+    margin-left: 75px;
+    height: 80%;
+    width: 500px;
+    display: flex;
+    flex-wrap: wrap;
+}
 .time-left{
     background-color: white;
     max-height: 300px;
@@ -70,8 +83,7 @@ body {
     background-color: white;
     margin: 20px;
     max-width: 900px;
-    display: flex;
-    flex-wrap: wrap;
+
 }
 .square{
     border: 1px solid rgb(202, 202, 202);
