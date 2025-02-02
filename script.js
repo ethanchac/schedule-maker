@@ -10,11 +10,23 @@ function populateTimeOptions() {
     const endTimeSelect = document.getElementById('endTime');
 
     for (let hour = 1; hour <= 12; hour++) {
-        let displayHour = hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
         startTimeSelect.options.add(new Option(hour + " AM"));
         endTimeSelect.options.add(new Option(hour + " PM"));
     }
     
+}
+const closeAvailability = document.querySelector("#close");
+const availabilityPerson = document.getElementById("availability-people");
+const availabilityInside = document.querySelector(".availability-people-inner");
+
+availabilityPerson.classList.remove("open");
+
+closeAvailability.addEventListener("click", function(){
+    availabilityPerson.classList.remove("open");;
+});
+
+function openAvailability(){
+    availabilityPerson.classList.add("open");
 }
 
 
@@ -93,10 +105,13 @@ addPersonButton.addEventListener("click", function () {
 
                 // Add the "Availability" button to the container
                 const availabilityButton = document.createElement("button");
-                availabilityButton.textContent = "Availability";
+                availabilityButton.textContent = "Availability"; 
                 availabilityButton.className = "availability-button"; // Apply the CSS class
                 availabilityButton.addEventListener("click", function () {
                     //Important stuff here
+                    if (availabilityPerson) {
+                        openAvailability();
+                    }
                 });
                 nameContainer.appendChild(availabilityButton);
 
@@ -109,6 +124,115 @@ addPersonButton.addEventListener("click", function () {
         }
     });
 });
-window.onload = function() {
-    populateTimeOptions(); // Populate options on page load
+// Global availability storage
+let peopleAvailability = {};
+
+
+// Initialize the script once the document is fully loaded
+document.addEventListener("DOMContentLoaded", function() {
+    const createPersonButton = document.querySelector("#add-person");
+    const peopleList = document.querySelector("#scheduled-people");
+
+    // Add new person
+    createPersonButton.addEventListener("click", function() {
+        const inputField = document.createElement("input");
+        inputField.type = "text";
+        inputField.placeholder = "Enter name";
+        inputField.style.width = "100px";
+
+        createPersonButton.replaceWith(inputField);
+        inputField.focus();
+
+        inputField.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                const name = inputField.value.trim();
+                if (name) {
+                    createPersonEntry(name, peopleList, createPersonButton);
+                    inputField.replaceWith(createPersonButton);
+                }
+            }
+        });
+    });
+
+    function createPersonEntry(name, peopleList, button) {
+        const nameContainer = document.createElement("div");
+        nameContainer.className = "scheduled-people-div";
+        nameContainer.style.display = "flex";
+        nameContainer.style.alignItems = "center";
+        nameContainer.style.marginBottom = "5px";
+
+        const nameElement = document.createElement("div");
+        nameElement.textContent = name;
+        nameContainer.appendChild(nameElement);
+
+        const availabilityButton = document.createElement("button");
+        availabilityButton.textContent = "Set Availability";
+        availabilityButton.className = "availability-button";
+        availabilityButton.addEventListener("click", () => openAvailability(name));
+
+        nameContainer.appendChild(availabilityButton);
+        peopleList.appendChild(nameContainer);
+
+        // Initialize the new person's availability set
+        peopleAvailability[name] = new Set();
+    }
+
+    // Handling day selections
+    document.querySelectorAll('.availability-days-button button').forEach(button => {
+        button.addEventListener('click', function() {
+            toggleDaySelection(this.id, this);
+        });
+    });
+
+    function toggleDaySelection(day, button) {
+        const currentPerson = document.querySelector('.availability-people-inner').dataset.currentPerson;
+        if (!peopleAvailability[currentPerson]) {
+            peopleAvailability[currentPerson] = new Set();
+        }
+
+        if (peopleAvailability[currentPerson].has(day)) {
+            peopleAvailability[currentPerson].delete(day);
+        } else {
+            peopleAvailability[currentPerson].add(day);
+        }
+
+        button.classList.toggle('selected-day'); // Visual feedback
+        updateNumDays(currentPerson); // Update the number of days selectable
+    }
+
+    function openAvailability(person) {
+        const availabilityInner = document.querySelector('.availability-people-inner');
+        availabilityInner.dataset.currentPerson = person;
+        updateButtonStyles(person);
+    }
+
+    function updateButtonStyles(person) {
+        const buttons = document.querySelectorAll('.availability-days-button button');
+        buttons.forEach(button => {
+            button.classList.toggle('selected-day', peopleAvailability[person].has(button.id));
+        });
+    }
+
+    function updateNumDays(person) {
+        const numDaysContainer = document.querySelector('.availability-num-days');
+        numDaysContainer.innerHTML = '';
+
+        const daysSelected = peopleAvailability[person].size;
+        if (daysSelected > 0) {
+            const selectElement = document.createElement('select');
+            for (let i = 1; i <= daysSelected; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                selectElement.appendChild(option);
+            }
+            numDaysContainer.appendChild(selectElement);
+        }
+    }
+});
+
+
+
+window.onload = function(){
+    populateTimeOptions();
 }

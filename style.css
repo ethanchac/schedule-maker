@@ -96,3 +96,53 @@ body {
     width: 35px;
     height: 35px;
 }
+.availability-people{
+    opacity: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transition: all 0.1s ease-in-out;
+    z-index: -1;
+
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    background-color: rgb(13, 13, 13);
+    color: black;
+}
+.availability-people.open{
+    opacity: 1;
+    z-index: 999;
+}
+.availability-people-inner{
+    display: flex;
+    flex-direction: column;
+    justify-content:space-between;
+    background-color: white;
+    border-radius: 5px;
+    width: 600px;
+    
+}
+.availability-people-inner input{
+    width: 1fr;
+    height: 1rem;
+}
+.availability-days-button{
+    display: flex;
+
+}
+#close{
+    width: 25px;
+    height: 25px;
+}
+.button.selected {
+    background-color: #4CAF50; /* Green background for selected */
+    color: white;
+}
+.selected-day {
+    background-color: #4CAF50; /* Green background for selected days */
+    color: white;
+}
