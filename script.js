@@ -125,57 +125,37 @@ addPersonButton.addEventListener("click", function () {
     });
 });
 // Global availability storage
-let peopleAvailability = {};
+let peopleAvailability = [];
 
-
+function PersonAvailability(name, sun, mon, tue, wed, thur, fri, sat){
+    this.name = name;
+    this.sun = sun;
+    this.mon = mon;
+    this.tue= tue;
+    this.wed = wed;
+    this.thur = thur;
+    this.fri = fri;
+    this.sat = sat;
+    const Person = {
+        Name : name,
+        Sun : sun,
+        Mon : mon,
+        Tue : tue,
+        Wed : wed,
+        Thur : thur,
+        Fri : fri,
+        Sat : sat
+    }
+    this.addPerson = function(){
+        peopleAvailability.push(Person);
+    }
+}
+const saveButton = document.querySelector("#save-availability");
+saveButton.addEventListener("click", function(){
+    
+});
 // Initialize the script once the document is fully loaded
 document.addEventListener("DOMContentLoaded", function() {
-    const createPersonButton = document.querySelector("#add-person");
-    const peopleList = document.querySelector("#scheduled-people");
-
-    // Add new person
-    createPersonButton.addEventListener("click", function() {
-        const inputField = document.createElement("input");
-        inputField.type = "text";
-        inputField.placeholder = "Enter name";
-        inputField.style.width = "100px";
-
-        createPersonButton.replaceWith(inputField);
-        inputField.focus();
-
-        inputField.addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                const name = inputField.value.trim();
-                if (name) {
-                    createPersonEntry(name, peopleList, createPersonButton);
-                    inputField.replaceWith(createPersonButton);
-                }
-            }
-        });
-    });
-
-    function createPersonEntry(name, peopleList, button) {
-        const nameContainer = document.createElement("div");
-        nameContainer.className = "scheduled-people-div";
-        nameContainer.style.display = "flex";
-        nameContainer.style.alignItems = "center";
-        nameContainer.style.marginBottom = "5px";
-
-        const nameElement = document.createElement("div");
-        nameElement.textContent = name;
-        nameContainer.appendChild(nameElement);
-
-        const availabilityButton = document.createElement("button");
-        availabilityButton.textContent = "Set Availability";
-        availabilityButton.className = "availability-button";
-        availabilityButton.addEventListener("click", () => openAvailability(name));
-
-        nameContainer.appendChild(availabilityButton);
-        peopleList.appendChild(nameContainer);
-
-        // Initialize the new person's availability set
-        peopleAvailability[name] = new Set();
-    }
 
     // Handling day selections
     document.querySelectorAll('.availability-days-button button').forEach(button => {
@@ -199,12 +179,7 @@ document.addEventListener("DOMContentLoaded", function() {
         button.classList.toggle('selected-day'); // Visual feedback
         updateNumDays(currentPerson); // Update the number of days selectable
     }
-
-    function openAvailability(person) {
-        const availabilityInner = document.querySelector('.availability-people-inner');
-        availabilityInner.dataset.currentPerson = person;
-        updateButtonStyles(person);
-    }
+    
 
     function updateButtonStyles(person) {
         const buttons = document.querySelectorAll('.availability-days-button button');
@@ -229,6 +204,7 @@ document.addEventListener("DOMContentLoaded", function() {
             numDaysContainer.appendChild(selectElement);
         }
     }
+        
 });
 
 
