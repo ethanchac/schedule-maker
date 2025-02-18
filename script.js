@@ -157,8 +157,21 @@ function PersonAvailability(name, sun, mon, tue, wed, thur, fri, sat){
         Fri : fri,
         Sat : sat
     }
-    this.addPerson = function(){
-        peopleAvailability.push(Person);
+    this.addPerson = function() {
+        const existingPersonIndex = peopleAvailability.findIndex(p => p.name === this.name);
+        if (existingPersonIndex === -1) {
+            peopleAvailability.push(this);
+        } else {
+            // Update existing person properties directly
+            let existingPerson = peopleAvailability[existingPersonIndex];
+            existingPerson.sun = this.sun;
+            existingPerson.mon = this.mon;
+            existingPerson.tue = this.tue;
+            existingPerson.wed = this.wed;
+            existingPerson.thur = this.thur;
+            existingPerson.fri = this.fri;
+            existingPerson.sat = this.sat;
+        }
         console.log(peopleAvailability);
     }
 }
@@ -222,7 +235,6 @@ saveButton.addEventListener("click", function() {
     const currentPerson = currentDiv.dataset.currentPerson;
     availabilityPerson.classList.remove("open");
 
-    // Initialize all days as false
     const days = {
         sunday: false,
         monday: false,
@@ -233,18 +245,29 @@ saveButton.addEventListener("click", function() {
         saturday: false
     };
 
-    // Update the selected days dynamically
     sub.forEach(day => {
         if (days.hasOwnProperty(day)) {
             days[day] = true;
         }
     });
 
-    const Person = new PersonAvailability(currentPerson, days.sunday, days.monday, days.tuesday, days.wednesday, days.thursday, days.friday, days.saturday);
-    Person.addPerson();
+    const Person = new PersonAvailability(
+        currentPerson,
+        days.sunday,
+        days.monday,
+        days.tuesday,
+        days.wednesday,
+        days.thursday,
+        days.friday,
+        days.saturday
+    );
+    Person.addPerson();  // <-- This should only be called when a new person is created
+    
 
     sub = [];
 });
+
+
 
 
 window.onload = function(){
