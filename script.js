@@ -21,13 +21,6 @@ const availabilityInside = document.querySelector(".availability-people-inner");
 
 availabilityPerson.classList.remove("open");
 
-closeAvailability.addEventListener("click", function(){
-    availabilityPerson.classList.remove("open");
-});
-
-function openAvailability(){
-    availabilityPerson.classList.add("open");
-}
 
 
 function applyHours() {
@@ -66,10 +59,9 @@ function createCalendar(){
         
         container.appendChild(square);
 
-        console.log(square.style.width);
-        console.log(container.offsetWidth);
+
     }
-    console.log(hoursInSchedule);
+
 }
 settingsButton.addEventListener("click", function(){
     
@@ -111,7 +103,7 @@ addPersonButton.addEventListener("click", function () {
                 availabilityButton.addEventListener("click", function () {
                     // Retrieve the name from the data attribute
                     const personName = this.parentElement.dataset.name;
-                    console.log("Availability button clicked for:", personName);
+                    //console.log("Availability button clicked for:", personName);
 
                     // Set the current person in the availability panel
                     const availabilityInner = document.querySelector('.availability-people-inner');
@@ -137,6 +129,33 @@ addPersonButton.addEventListener("click", function () {
 // Global availability storage
 let peopleAvailability = [];
 let sub = [];
+
+closeAvailability.addEventListener("click", function(){
+    availabilityPerson.classList.remove("open");
+});
+
+function openAvailability(){
+    availabilityPerson.classList.add("open");
+    sub = [];
+
+    const currentDiv = document.querySelector('.availability-people-inner');
+    const currentPerson = currentDiv.dataset.currentPerson;
+    const existingPersonIndex = peopleAvailability.findIndex(person => person.name.trim() === currentPerson);
+
+    if(existingPersonIndex !== -1){
+        const person = peopleAvailability.find(p => p.name === currentPerson);
+        if (person.sun) sub.push("sunday");
+        if (person.mon) sub.push("monday");
+        if (person.tue) sub.push("tuesday");
+        if (person.wed) sub.push("wednesday");
+        if (person.thur) sub.push("thursday");
+        if (person.fri) sub.push("friday");
+        if (person.sat) sub.push("saturday");
+    }
+
+
+    updateButtonStyles();
+}
 
 function PersonAvailability(name, sun, mon, tue, wed, thur, fri, sat){
     this.name = name;
@@ -175,6 +194,40 @@ function PersonAvailability(name, sun, mon, tue, wed, thur, fri, sat){
         console.log(peopleAvailability);
     }
 }
+function updateButtonStyles() {
+    const currentDiv = document.querySelector('.availability-people-inner');
+    const currentPerson = currentDiv.dataset.currentPerson;
+
+    // Check if currentPerson exists in the array
+    const existingPersonIndex = peopleAvailability.findIndex(person => person.name.trim() === currentPerson);
+    const availabilityButtons = document.querySelectorAll(".availability-days-button button"); // Ensure this is correct
+
+
+    if (existingPersonIndex !== -1) {
+        // Remove 'selected-day' from all buttons first
+        availabilityButtons.forEach(button => {
+            button.classList.remove("selected-day");
+        });
+
+        // Add 'selected-day' class based on sub array
+        availabilityButtons.forEach(button => {
+            const day = button.dataset.day;
+            console.log("Checking button for day:", day); // Debugging
+
+            if (day && sub.includes(day)) {  // Ensure day is not undefined
+                button.classList.add("selected-day");
+                console.log(`Added 'selected-day' to ${day}`);
+            }
+        });
+    } else {
+        // If person doesn't exist, remove all selected days
+        console.log("Person not found, clearing selection.");
+        availabilityButtons.forEach(button => {
+            button.classList.remove("selected-day");
+        });
+    }
+}
+
 
 // Initialize the script once the document is fully loaded
 document.addEventListener("DOMContentLoaded", function() {
@@ -190,24 +243,29 @@ document.addEventListener("DOMContentLoaded", function() {
         if (!sub.includes(day)) {
             sub.push(day);
         } else {
+            //Removing from sub array
             let index = sub.indexOf(day);
             if (index !== -1) {
                 sub.splice(index, 1);
             }
         }
-
+    
         console.log(sub);
         updateNumDays(); // Update the number of days selectable
-        button.classList.toggle('selected-day'); // Visual feedback
-         
+    
+        // If no days are selected, remove the class
+        if (sub.length === 0) {
+            document.querySelectorAll(".availability-days-button button").forEach(btn => {
+                btn.classList.remove("selected-day");
+            });
+        } else {
+            button.classList.toggle('selected-day'); // Toggle normally
+        }
     }
-    function updateButtonStyles(person) {
-        const buttons = document.querySelectorAll('.availability-days-button button');
-        buttons.forEach(button => {
-            button.classList.toggle('selected-day', sub[person].has(button.id));
-        });
-    }
+    
 
+    
+    //THIS FUNCTION IS FOR HOW MANY DAYS THEY CAN WORK
     function updateNumDays() {
         const numDaysContainer = document.querySelector('.availability-num-days');
         numDaysContainer.innerHTML = '';
@@ -235,6 +293,7 @@ saveButton.addEventListener("click", function() {
     const currentPerson = currentDiv.dataset.currentPerson;
     availabilityPerson.classList.remove("open");
 
+
     const days = {
         sunday: false,
         monday: false,
@@ -261,9 +320,7 @@ saveButton.addEventListener("click", function() {
         days.friday,
         days.saturday
     );
-    Person.addPerson();  // <-- This should only be called when a new person is created
-    
-
+    Person.addPerson(); 
     sub = [];
 });
 
