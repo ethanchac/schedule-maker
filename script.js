@@ -22,7 +22,7 @@ const availabilityInside = document.querySelector(".availability-people-inner");
 availabilityPerson.classList.remove("open");
 
 closeAvailability.addEventListener("click", function(){
-    availabilityPerson.classList.remove("open");;
+    availabilityPerson.classList.remove("open");
 });
 
 function openAvailability(){
@@ -97,6 +97,7 @@ addPersonButton.addEventListener("click", function () {
                 nameContainer.style.alignItems = "center"; // Vertically center items
                 nameContainer.style.marginBottom = "5px"; // Add some spacing between entries
                 nameContainer.className = "scheduled-people-div";
+                nameContainer.dataset.name = name; // Store the name in a data attribute
 
                 // Add the name to the container
                 const nameElement = document.createElement("div");
@@ -108,7 +109,15 @@ addPersonButton.addEventListener("click", function () {
                 availabilityButton.textContent = "Availability"; 
                 availabilityButton.className = "availability-button"; // Apply the CSS class
                 availabilityButton.addEventListener("click", function () {
-                    //Important stuff here
+                    // Retrieve the name from the data attribute
+                    const personName = this.parentElement.dataset.name;
+                    console.log("Availability button clicked for:", personName);
+
+                    // Set the current person in the availability panel
+                    const availabilityInner = document.querySelector('.availability-people-inner');
+                    availabilityInner.dataset.currentPerson = personName;
+
+                    // Open the availability panel
                     if (availabilityPerson) {
                         openAvailability();
                     }
@@ -124,8 +133,10 @@ addPersonButton.addEventListener("click", function () {
         }
     });
 });
+
 // Global availability storage
 let peopleAvailability = [];
+let sub = [];
 
 function PersonAvailability(name, sun, mon, tue, wed, thur, fri, sat){
     this.name = name;
@@ -148,12 +159,10 @@ function PersonAvailability(name, sun, mon, tue, wed, thur, fri, sat){
     }
     this.addPerson = function(){
         peopleAvailability.push(Person);
+        console.log(peopleAvailability);
     }
 }
-const saveButton = document.querySelector("#save-availability");
-saveButton.addEventListener("click", function(){
-    
-});
+
 // Initialize the script once the document is fully loaded
 document.addEventListener("DOMContentLoaded", function() {
 
@@ -165,34 +174,33 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     function toggleDaySelection(day, button) {
-        const currentPerson = document.querySelector('.availability-people-inner').dataset.currentPerson;
-        if (!peopleAvailability[currentPerson]) {
-            peopleAvailability[currentPerson] = new Set();
-        }
-
-        if (peopleAvailability[currentPerson].has(day)) {
-            peopleAvailability[currentPerson].delete(day);
+        if (!sub.includes(day)) {
+            sub.push(day);
         } else {
-            peopleAvailability[currentPerson].add(day);
+            let index = sub.indexOf(day);
+            if (index !== -1) {
+                sub.splice(index, 1);
+            }
         }
 
+        console.log(sub);
+        updateNumDays(); // Update the number of days selectable
         button.classList.toggle('selected-day'); // Visual feedback
-        updateNumDays(currentPerson); // Update the number of days selectable
+         
     }
-    
-
     function updateButtonStyles(person) {
         const buttons = document.querySelectorAll('.availability-days-button button');
         buttons.forEach(button => {
-            button.classList.toggle('selected-day', peopleAvailability[person].has(button.id));
+            button.classList.toggle('selected-day', sub[person].has(button.id));
         });
     }
 
-    function updateNumDays(person) {
+    function updateNumDays() {
         const numDaysContainer = document.querySelector('.availability-num-days');
         numDaysContainer.innerHTML = '';
 
-        const daysSelected = peopleAvailability[person].size;
+        const daysSelected = sub.length;
+        console.log("Days selected is", daysSelected);
         if (daysSelected > 0) {
             const selectElement = document.createElement('select');
             for (let i = 1; i <= daysSelected; i++) {
@@ -207,6 +215,36 @@ document.addEventListener("DOMContentLoaded", function() {
         
 });
 
+const saveButton = document.querySelector("#save-availability");
+
+saveButton.addEventListener("click", function() {
+    const currentDiv = document.querySelector('.availability-people-inner');
+    const currentPerson = currentDiv.dataset.currentPerson;
+    availabilityPerson.classList.remove("open");
+
+    // Initialize all days as false
+    const days = {
+        sunday: false,
+        monday: false,
+        tuesday: false,
+        wednesday: false,
+        thursday: false,
+        friday: false,
+        saturday: false
+    };
+
+    // Update the selected days dynamically
+    sub.forEach(day => {
+        if (days.hasOwnProperty(day)) {
+            days[day] = true;
+        }
+    });
+
+    const Person = new PersonAvailability(currentPerson, days.sunday, days.monday, days.tuesday, days.wednesday, days.thursday, days.friday, days.saturday);
+    Person.addPerson();
+
+    sub = [];
+});
 
 
 window.onload = function(){
