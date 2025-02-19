@@ -1,6 +1,8 @@
 /* root styles and body background as you have it */
 :root {
     --main-color: rgb(233, 238, 240);
+    font-family: "Quicksand", sans-serif;
+    font-weight: 400;
     /* type */
 }
 .main{
@@ -17,6 +19,7 @@ body {
     flex-direction: column;
     max-width: 900px;
     max-height: 600px;
+    width: 100%;
     gap: 10px;
     margin: 50px;
 
@@ -123,7 +126,7 @@ body {
     justify-content:space-between;
     background-color: white;
     border-radius: 5px;
-    width: 600px;
+    width: 50%;
     
 }
 .availability-people-inner input{
@@ -132,7 +135,8 @@ body {
 }
 .availability-days-button{
     display: flex;
-
+    justify-content: center;
+    gap: 10px;
 }
 #close{
     width: 25px;
@@ -145,4 +149,14 @@ body {
 .selected-day {
     background-color: #4CAF50; /* Green background for selected days */
     color: white;
+}
+#save-availability{
+    width: 50%;
+    height: 5%;
+}
+.days-hours-container{
+    display: flex;
+    justify-content: space-between;
+    
+
 }

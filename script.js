@@ -153,8 +153,9 @@ function openAvailability(){
         if (person.sat) sub.push("saturday");
     }
 
-
+    hoursInput();
     updateButtonStyles();
+    
 }
 
 function PersonAvailability(name, sun, mon, tue, wed, thur, fri, sat){
@@ -212,16 +213,13 @@ function updateButtonStyles() {
         // Add 'selected-day' class based on sub array
         availabilityButtons.forEach(button => {
             const day = button.dataset.day;
-            console.log("Checking button for day:", day); // Debugging
 
             if (day && sub.includes(day)) {  // Ensure day is not undefined
                 button.classList.add("selected-day");
-                console.log(`Added 'selected-day' to ${day}`);
             }
         });
     } else {
         // If person doesn't exist, remove all selected days
-        console.log("Person not found, clearing selection.");
         availabilityButtons.forEach(button => {
             button.classList.remove("selected-day");
         });
@@ -229,62 +227,100 @@ function updateButtonStyles() {
 }
 
 
-// Initialize the script once the document is fully loaded
-document.addEventListener("DOMContentLoaded", function() {
 
-    // Handling day selections
-    document.querySelectorAll('.availability-days-button button').forEach(button => {
-        button.addEventListener('click', function() {
-            toggleDaySelection(this.id, this);
-        });
+
+// Handling day selections
+document.querySelectorAll('.availability-days-button button').forEach(button => {
+    button.addEventListener('click', function() {
+        toggleDaySelection(this.id, this);
     });
-
-    function toggleDaySelection(day, button) {
-        if (!sub.includes(day)) {
-            sub.push(day);
-        } else {
-            //Removing from sub array
-            let index = sub.indexOf(day);
-            if (index !== -1) {
-                sub.splice(index, 1);
-            }
-        }
-    
-        console.log(sub);
-        updateNumDays(); // Update the number of days selectable
-    
-        // If no days are selected, remove the class
-        if (sub.length === 0) {
-            document.querySelectorAll(".availability-days-button button").forEach(btn => {
-                btn.classList.remove("selected-day");
-            });
-        } else {
-            button.classList.toggle('selected-day'); // Toggle normally
-        }
-    }
-    
-
-    
-    //THIS FUNCTION IS FOR HOW MANY DAYS THEY CAN WORK
-    function updateNumDays() {
-        const numDaysContainer = document.querySelector('.availability-num-days');
-        numDaysContainer.innerHTML = '';
-
-        const daysSelected = sub.length;
-        console.log("Days selected is", daysSelected);
-        if (daysSelected > 0) {
-            const selectElement = document.createElement('select');
-            for (let i = 1; i <= daysSelected; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = i;
-                selectElement.appendChild(option);
-            }
-            numDaysContainer.appendChild(selectElement);
-        }
-    }
-        
 });
+
+function toggleDaySelection(day, button) {
+    if (!sub.includes(day)) {
+        sub.push(day);
+    } else {
+        //Removing from sub array
+        let index = sub.indexOf(day);
+        if (index !== -1) {
+            sub.splice(index, 1);
+        }
+    }
+
+    updateNumDays(); // Update the number of days selectable
+
+    // If no days are selected, remove the class
+    if (sub.length === 0) {
+        document.querySelectorAll(".availability-days-button button").forEach(btn => {
+            btn.classList.remove("selected-day");
+        });
+    } else {
+        button.classList.toggle('selected-day'); // Toggle normally
+    }
+    hoursInput();
+}
+
+
+
+//THIS FUNCTION IS FOR HOW MANY DAYS THEY CAN WORK
+function updateNumDays() {
+    const numDaysContainer = document.querySelector('.availability-num-days');
+    numDaysContainer.innerHTML = '';
+
+    const daysSelected = sub.length;
+
+    if (daysSelected > 0) {
+        const selectElement = document.createElement('select');
+        for (let i = 1; i <= daysSelected; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            selectElement.appendChild(option);
+        }
+        numDaysContainer.appendChild(selectElement);
+    }
+}
+function hoursInput() {
+    console.log("dioasjiodjaos");
+    const container = document.querySelector(".hours-of-days");
+    container.innerHTML = ""; // Clear old days & select inputs
+
+    for (let i = 0; i < sub.length; i++) {
+        const divHolderR = document.createElement("div");
+        const divHolderL = document.createElement("div");
+        const divFinal = document.createElement("div");
+
+        // Create fresh select elements every time
+        let startTimeSelect = document.createElement("select");
+        let endTimeSelect = document.createElement("select");
+
+        // Ensure each select has a unique ID to avoid overlap
+        startTimeSelect.id = `startTime-${sub[i]}`;
+        endTimeSelect.id = `endTime-${sub[i]}`;
+
+        // Populate start and end time options
+        startTimeSelect.innerHTML = ""; // Clear existing options before adding new ones
+        endTimeSelect.innerHTML = "";
+
+        for (let hour = 1; hour <= 12; hour++) {
+            startTimeSelect.options.add(new Option(hour + " AM", hour + " AM"));
+            endTimeSelect.options.add(new Option(hour + " PM", hour + " PM"));
+        }
+
+        divHolderR.textContent = sub[i]; 
+        divHolderL.appendChild(startTimeSelect);
+        divHolderL.appendChild(endTimeSelect);
+        divFinal.appendChild(divHolderR);
+        divFinal.appendChild(divHolderL);
+        divFinal.className = "days-hours-container";
+
+        container.appendChild(divFinal);
+    }
+}
+
+
+    
+
 
 const saveButton = document.querySelector("#save-availability");
 
