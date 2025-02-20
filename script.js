@@ -134,29 +134,53 @@ closeAvailability.addEventListener("click", function(){
     availabilityPerson.classList.remove("open");
 });
 
-function openAvailability(){
+function openAvailability() {
     availabilityPerson.classList.add("open");
     sub = [];
 
-    const currentDiv = document.querySelector('.availability-people-inner');
+    const currentDiv = document.querySelector(".availability-people-inner");
     const currentPerson = currentDiv.dataset.currentPerson;
-    const existingPersonIndex = peopleAvailability.findIndex(person => person.name.trim() === currentPerson);
+    const existingPersonIndex = peopleAvailability.findIndex(
+        (person) => person.name.trim() === currentPerson
+    );
 
-    if(existingPersonIndex !== -1){
-        const person = peopleAvailability.find(p => p.name === currentPerson);
-        if (person.sun) sub.push("sunday");
-        if (person.mon) sub.push("monday");
-        if (person.tue) sub.push("tuesday");
-        if (person.wed) sub.push("wednesday");
-        if (person.thur) sub.push("thursday");
-        if (person.fri) sub.push("friday");
-        if (person.sat) sub.push("saturday");
+    if (existingPersonIndex !== -1) {
+        const person = peopleAvailability[existingPersonIndex];
+
+        // Loop through all days and check availability
+        Object.keys(person).forEach((day) => {
+            if (day !== "name" && person[day].available) {
+                sub.push(day);
+            }
+        });
     }
 
+    // Now generate the select elements
     hoursInput();
+
+    // 🔴 Move setting values **after** elements exist
+    if (existingPersonIndex !== -1) {
+        const person = peopleAvailability[existingPersonIndex];
+
+        Object.keys(person).forEach((day) => {
+            if (day !== "name" && person[day].available) {
+                // Now, the elements should exist, so setting values won't cause errors
+                const startTimeElement = document.getElementById(`startTime-${day}`);
+                const endTimeElement = document.getElementById(`endTime-${day}`);
+
+                if (startTimeElement && endTimeElement) {
+                    startTimeElement.value = person[day].start;
+                    endTimeElement.value = person[day].end;
+                }
+            }
+        });
+    }
+
     updateButtonStyles();
-    
+    updateNumDays();
 }
+
+
 
 function PersonAvailability(name, sun, mon, tue, wed, thur, fri, sat){
     this.name = name;
@@ -167,16 +191,6 @@ function PersonAvailability(name, sun, mon, tue, wed, thur, fri, sat){
     this.thur = thur;
     this.fri = fri;
     this.sat = sat;
-    const Person = {
-        Name : name,
-        Sun : sun,
-        Mon : mon,
-        Tue : tue,
-        Wed : wed,
-        Thur : thur,
-        Fri : fri,
-        Sat : sat
-    }
     this.addPerson = function() {
         const existingPersonIndex = peopleAvailability.findIndex(p => p.name === this.name);
         if (existingPersonIndex === -1) {
@@ -192,7 +206,6 @@ function PersonAvailability(name, sun, mon, tue, wed, thur, fri, sat){
             existingPerson.fri = this.fri;
             existingPerson.sat = this.sat;
         }
-        console.log(peopleAvailability);
     }
 }
 function updateButtonStyles() {
@@ -281,7 +294,6 @@ function updateNumDays() {
     }
 }
 function hoursInput() {
-    console.log("dioasjiodjaos");
     const container = document.querySelector(".hours-of-days");
     container.innerHTML = ""; // Clear old days & select inputs
 
@@ -290,7 +302,7 @@ function hoursInput() {
         const divHolderL = document.createElement("div");
         const divFinal = document.createElement("div");
 
-        // Create fresh select elements every time
+        // Create fresh select elements
         let startTimeSelect = document.createElement("select");
         let endTimeSelect = document.createElement("select");
 
@@ -299,15 +311,12 @@ function hoursInput() {
         endTimeSelect.id = `endTime-${sub[i]}`;
 
         // Populate start and end time options
-        startTimeSelect.innerHTML = ""; // Clear existing options before adding new ones
-        endTimeSelect.innerHTML = "";
-
         for (let hour = 1; hour <= 12; hour++) {
             startTimeSelect.options.add(new Option(hour + " AM", hour + " AM"));
             endTimeSelect.options.add(new Option(hour + " PM", hour + " PM"));
         }
 
-        divHolderR.textContent = sub[i]; 
+        divHolderR.textContent = sub[i];
         divHolderL.appendChild(startTimeSelect);
         divHolderL.appendChild(endTimeSelect);
         divFinal.appendChild(divHolderR);
@@ -318,10 +327,6 @@ function hoursInput() {
     }
 }
 
-
-    
-
-
 const saveButton = document.querySelector("#save-availability");
 
 saveButton.addEventListener("click", function() {
@@ -329,40 +334,52 @@ saveButton.addEventListener("click", function() {
     const currentPerson = currentDiv.dataset.currentPerson;
     availabilityPerson.classList.remove("open");
 
-
-    const days = {
-        sunday: false,
-        monday: false,
-        tuesday: false,
-        wednesday: false,
-        thursday: false,
-        friday: false,
-        saturday: false
+    // Object to store each day's availability and working hours
+    let availabilityData = {
+        name: currentPerson,
+        sunday: { available: false, start: "", end: "" },
+        monday: { available: false, start: "", end: "" },
+        tuesday: { available: false, start: "", end: "" },
+        wednesday: { available: false, start: "", end: "" },
+        thursday: { available: false, start: "", end: "" },
+        friday: { available: false, start: "", end: "" },
+        saturday: { available: false, start: "", end: "" }
     };
 
+    // Loop through selected days and retrieve their working hours
     sub.forEach(day => {
-        if (days.hasOwnProperty(day)) {
-            days[day] = true;
+        let startTime = document.getElementById(`startTime-${day}`).value;
+        let endTime = document.getElementById(`endTime-${day}`).value;
+
+        if (availabilityData.hasOwnProperty(day)) {
+            availabilityData[day] = {
+                available: true,
+                start: startTime || "N/A",
+                end: endTime || "N/A"
+            };
         }
     });
 
-    const Person = new PersonAvailability(
-        currentPerson,
-        days.sunday,
-        days.monday,
-        days.tuesday,
-        days.wednesday,
-        days.thursday,
-        days.friday,
-        days.saturday
-    );
-    Person.addPerson(); 
-    sub = [];
+    // Check if person already exists in the array
+    const existingPersonIndex = peopleAvailability.findIndex(person => person.name === currentPerson);
+
+    if (existingPersonIndex !== -1) {
+        // Update existing person's availability
+        peopleAvailability[existingPersonIndex] = availabilityData;
+    } else {
+        // Add new person to the array
+        peopleAvailability.push(availabilityData);
+    }
+
+    console.log(peopleAvailability); // Debugging - logs the updated availability data
+
+    sub = []; // Clear selection after saving
 });
 
 
 
 
 window.onload = function(){
+    applyHours();
     populateTimeOptions();
 }
