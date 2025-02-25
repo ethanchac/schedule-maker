@@ -48,21 +48,61 @@ function applyHours() {
 
 }
 
-function createCalendar(){
-    for(let i = 0; i < hoursInSchedule * daysOfWeek; i++){
-        const square = document.createElement("div");
-        let squareWidth = container.offsetWidth / daysOfWeek - 2;
-        let squareHeight = container.offsetHeight / hoursInSchedule - 2;
-        square.style.width = `${squareWidth}px`;
-        square.style.height = `${squareHeight}px`;
-        square.className = "square";
-        
-        container.appendChild(square);
+function createCalendar() {
+    container.innerHTML = ""; // Clear previous calendar
 
+    let totalContainerHeight = 500 * 0.8; // Fixed container height
+    let slotHeight = totalContainerHeight / hoursInSchedule; // Adjust dynamically
 
+    container.style.height = `${totalContainerHeight}px`; // Set fixed height
+    container.style.display = "grid";
+    container.style.gridTemplateColumns = `auto repeat(${daysOfWeek}, 0.5fr)`; // First column for times, then days
+    container.style.gridTemplateRows = `auto repeat(${hoursInSchedule}, 1fr)`; // Adjust rows dynamically
+
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    let startNum = parseInt(document.getElementById('startTime').value) || 1; // Default 8 AM
+
+    // Add an empty top-left corner (where time & days meet)
+    const topLeftCorner = document.createElement("div");
+    topLeftCorner.className = "corner";
+    container.appendChild(topLeftCorner);
+
+    console.log("width IS "+container.offsetWidth);
+    console.log("height IS " + container.offsetHeight);
+
+    // Add days of the week as headers
+    for (let i = 0; i < daysOfWeek; i++) {
+        const dayHeader = document.createElement("div");
+        dayHeader.textContent = days[i];
+        dayHeader.className = "day-header";
+        container.appendChild(dayHeader);
     }
 
+    // Fill in time labels and schedule grid
+    for (let i = 0; i < hoursInSchedule; i++) {
+        // Create time labels on the left
+        const timeLabel = document.createElement("div");
+        let hour = startNum + i;
+        let ampm = hour >= 12 ? "PM" : "AM";
+        hour = hour > 12 ? hour - 12 : hour; // Convert to 12-hour format
+        timeLabel.textContent = `${hour} ${ampm}`;
+        timeLabel.className = "time-label";
+        container.appendChild(timeLabel);
+
+        // Create schedule slots for each day
+        for (let j = 0; j < daysOfWeek; j++) {
+            const square = document.createElement("div");
+            square.style.width = `${container.offsetWidth / daysOfWeek - 2 - 7.1}px`; // Adjust width
+            square.style.height = `${slotHeight - 2}px`; // Adjust height dynamically
+            square.className = "schedule-slot";
+            container.appendChild(square);
+        }
+    }
 }
+
+
+
+
 settingsButton.addEventListener("click", function(){
     
 });
@@ -144,27 +184,33 @@ function openAvailability() {
         (person) => person.name.trim() === currentPerson
     );
 
+    let savedNumDays = 1; // Default to 1, will update if a saved value exists
+
     if (existingPersonIndex !== -1) {
         const person = peopleAvailability[existingPersonIndex];
 
         // Loop through all days and check availability
         Object.keys(person).forEach((day) => {
             if (day !== "name" && person[day].available) {
-                sub.push(day);
+                sub.push(day); // Store selected days
             }
         });
+
+        // Retrieve the saved number of days
+        if (person.numDays) {
+            savedNumDays = person.numDays; // Store the saved value
+        }
     }
 
-    // Now generate the select elements
+    // Generate select elements dynamically
     hoursInput();
 
-    // 🔴 Move setting values **after** elements exist
+    // Restore saved start & end times
     if (existingPersonIndex !== -1) {
         const person = peopleAvailability[existingPersonIndex];
 
         Object.keys(person).forEach((day) => {
             if (day !== "name" && person[day].available) {
-                // Now, the elements should exist, so setting values won't cause errors
                 const startTimeElement = document.getElementById(`startTime-${day}`);
                 const endTimeElement = document.getElementById(`endTime-${day}`);
 
@@ -177,8 +223,9 @@ function openAvailability() {
     }
 
     updateButtonStyles();
-    updateNumDays();
+    updateNumDays(savedNumDays); // Pass saved value
 }
+
 
 
 
@@ -276,7 +323,7 @@ function toggleDaySelection(day, button) {
 
 
 //THIS FUNCTION IS FOR HOW MANY DAYS THEY CAN WORK
-function updateNumDays() {
+function updateNumDays(savedValue = 1) { // Default is 1, but we pass saved values
     const numDaysContainer = document.querySelector('.availability-num-days');
     numDaysContainer.innerHTML = '';
 
@@ -284,15 +331,23 @@ function updateNumDays() {
 
     if (daysSelected > 0) {
         const selectElement = document.createElement('select');
+        
         for (let i = 1; i <= daysSelected; i++) {
             const option = document.createElement('option');
             option.value = i;
             option.textContent = i;
+
+            if (i === savedValue) { // Select previously saved value
+                option.selected = true;
+            }
+
             selectElement.appendChild(option);
         }
+
         numDaysContainer.appendChild(selectElement);
     }
 }
+
 function hoursInput() {
     const container = document.querySelector(".hours-of-days");
     container.innerHTML = ""; // Clear old days & select inputs
@@ -334,9 +389,13 @@ saveButton.addEventListener("click", function() {
     const currentPerson = currentDiv.dataset.currentPerson;
     availabilityPerson.classList.remove("open");
 
-    // Object to store each day's availability and working hours
+    // Retrieve the number of days selected from the dropdown
+    const numDaysSelect = document.querySelector(".availability-num-days select");
+    const numDays = numDaysSelect ? parseInt(numDaysSelect.value, 10) : sub.length;
+
     let availabilityData = {
         name: currentPerson,
+        numDays: numDays, // Store number of working days
         sunday: { available: false, start: "", end: "" },
         monday: { available: false, start: "", end: "" },
         tuesday: { available: false, start: "", end: "" },
@@ -346,7 +405,7 @@ saveButton.addEventListener("click", function() {
         saturday: { available: false, start: "", end: "" }
     };
 
-    // Loop through selected days and retrieve their working hours
+    // Loop through selected days and retrieve working hours
     sub.forEach(day => {
         let startTime = document.getElementById(`startTime-${day}`).value;
         let endTime = document.getElementById(`endTime-${day}`).value;
@@ -364,10 +423,8 @@ saveButton.addEventListener("click", function() {
     const existingPersonIndex = peopleAvailability.findIndex(person => person.name === currentPerson);
 
     if (existingPersonIndex !== -1) {
-        // Update existing person's availability
         peopleAvailability[existingPersonIndex] = availabilityData;
     } else {
-        // Add new person to the array
         peopleAvailability.push(availabilityData);
     }
 
@@ -376,7 +433,12 @@ saveButton.addEventListener("click", function() {
     sub = []; // Clear selection after saving
 });
 
+const generateButton = document.querySelector("#generate-schedule");
 
+generateButton.addEventListener("click", function(){
+    //Main Algorithms goes in here
+
+});
 
 
 window.onload = function(){
