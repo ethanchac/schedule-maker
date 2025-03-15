@@ -35,6 +35,100 @@
             <div class="schedule-creator">
                 <div class="buttons">
                     <input type="image" src="settings.png" id="settings">
+                    <div class="settings-popup" id="settingsPopup">
+                        <div class="settings-popup-inner">
+                            <input type="image" src="close.png" id="closeSettings">
+                            <h2>Schedule Settings</h2>
+                            
+                            <div class="settings-section">
+                                <h3>Worker Requirements</h3>
+                                <div class="setting-item">
+                                    <label for="minWorkers">Minimum Workers:</label>
+                                    <input type="number" id="minWorkers" min="1" value="1">
+                                    <span>workers per day</span>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="maxWorkers">Maximum Workers:</label>
+                                    <input type="number" id="maxWorkers" min="1" value="5">
+                                    <span>workers per day</span>
+                                </div>
+                                <div class="setting-item">
+                                    <input type="checkbox" id="useCustomWorkers">
+                                    <label for="useCustomWorkers">Use custom worker requirements per day</label>
+                                </div>
+                                
+                                <div class="custom-days-container" id="customDaysContainer">
+                                    <h4>Custom Worker Requirements by Day</h4>
+                                    <div class="day-setting">
+                                        <label for="sundayMin">Sunday:</label>
+                                        <input type="number" id="sundayMin" min="0" value="1" placeholder="Min">
+                                        <span>to</span>
+                                        <input type="number" id="sundayMax" min="1" value="3" placeholder="Max">
+                                        <span>workers</span>
+                                    </div>
+                                    <div class="day-setting">
+                                        <label for="mondayMin">Monday:</label>
+                                        <input type="number" id="mondayMin" min="0" value="2" placeholder="Min">
+                                        <span>to</span>
+                                        <input type="number" id="mondayMax" min="1" value="5" placeholder="Max">
+                                        <span>workers</span>
+                                    </div>
+                                    <div class="day-setting">
+                                        <label for="tuesdayMin">Tuesday:</label>
+                                        <input type="number" id="tuesdayMin" min="0" value="2" placeholder="Min">
+                                        <span>to</span>
+                                        <input type="number" id="tuesdayMax" min="1" value="5" placeholder="Max">
+                                        <span>workers</span>
+                                    </div>
+                                    <div class="day-setting">
+                                        <label for="wednesdayMin">Wednesday:</label>
+                                        <input type="number" id="wednesdayMin" min="0" value="2" placeholder="Min">
+                                        <span>to</span>
+                                        <input type="number" id="wednesdayMax" min="1" value="5" placeholder="Max">
+                                        <span>workers</span>
+                                    </div>
+                                    <div class="day-setting">
+                                        <label for="thursdayMin">Thursday:</label>
+                                        <input type="number" id="thursdayMin" min="0" value="2" placeholder="Min">
+                                        <span>to</span>
+                                        <input type="number" id="thursdayMax" min="1" value="5" placeholder="Max">
+                                        <span>workers</span>
+                                    </div>
+                                    <div class="day-setting">
+                                        <label for="fridayMin">Friday:</label>
+                                        <input type="number" id="fridayMin" min="0" value="2" placeholder="Min">
+                                        <span>to</span>
+                                        <input type="number" id="fridayMax" min="1" value="5" placeholder="Max">
+                                        <span>workers</span>
+                                    </div>
+                                    <div class="day-setting">
+                                        <label for="saturdayMin">Saturday:</label>
+                                        <input type="number" id="saturdayMin" min="0" value="1" placeholder="Min">
+                                        <span>to</span>
+                                        <input type="number" id="saturdayMax" min="1" value="3" placeholder="Max">
+                                        <span>workers</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-section">
+                                <h3>Hours Per Worker</h3>
+                                <div class="setting-item">
+                                    <label for="minHoursPerWorker">Minimum Hours:</label>
+                                    <input type="number" id="minHoursPerWorker" min="1" max="24" value="4">
+                                    <span>hours per shift</span>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="maxHoursPerWorker">Maximum Hours:</label>
+                                    <input type="number" id="maxHoursPerWorker" min="1" max="24" value="8">
+                                    <span>hours per shift</span>
+                                </div>
+                                
+                            </div>
+                            
+                            <button id="saveSettings">Save Settings</button>
+                        </div>
+                    </div>
                     <input type="image" src="plus.png" id="add-person">
                 </div>
                 <div class="scheduled-people" id="scheduled-people">
