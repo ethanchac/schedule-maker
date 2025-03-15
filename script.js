@@ -20,57 +20,63 @@ const availabilityPerson = document.getElementById("availability-people");
 const availabilityInside = document.querySelector(".availability-people-inner");
 
 availabilityPerson.classList.remove("open");
+
 // Global variables with unique names
 let calendarGridContainer;
 let weekDayCount = 7;
 
-
-calendarGridContainer = document.querySelector('.calendar');
 // Populate the time selectors with proper values
 function populateTimeSelectors() {
     const startSelect = document.getElementById('startTime');
     const endSelect = document.getElementById('endTime');
     
-    // First clear any existing options to avoid duplication
-    startSelect.innerHTML = '';
-    endSelect.innerHTML = '';
-    
-    // Generate exactly 24 time options (0-23 hours)
-    for (let hour = 0; hour < 24; hour++) {
-        // Format as 12-hour with AM/PM
-        let displayHour = hour % 12;
-        if (displayHour === 0) displayHour = 12;
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const text = `${displayHour} ${ampm}`;
+    // Only populate if not already populated
+    if (startSelect.options.length === 0) {
+        // Add AM hours (1-12)
+        for (let i = 1; i <= 12; i++) {
+            let value = i; // Store actual hour value
+            if (i === 12) value = 12; // 12 AM is hour 0 in 24-hour format
+            let text = `${i} AM`;
+            startSelect.add(new Option(text, value));
+            endSelect.add(new Option(text, value));
+        }
         
-        // Create new option with 24-hour value and 12-hour display
-        const startOption = new Option(text, hour);
-        const endOption = new Option(text, hour);
+        // Add PM hours (1-12)
+        for (let i = 1; i <= 12; i++) {
+            let value = i + 12; // Add 12 for PM hours in 24-hour format
+            if (i === 12) value = 12; // 12 PM is hour 12 in 24-hour format
+            let text = `${i} PM`;
+            startSelect.add(new Option(text, value));
+            endSelect.add(new Option(text, value));
+        }
         
-        startSelect.add(startOption);
-        endSelect.add(endOption);
+        // Set default values
+        startSelect.value = 5; // 5 AM
+        endSelect.value = 23; // 11 PM
     }
-    
-    // Set default values
-    startSelect.value = 5; // 5 AM
-    endSelect.value = 19; // 7 PM
 }
 
 // Apply the selected time range
 function applyHours() {
-    // Get selected values from selectors
-    const startHour = parseInt(document.getElementById('startTime').value);
-    const endHour = parseInt(document.getElementById('endTime').value);
+    console.clear(); // Clear console for debugging
     
-    console.log("Applying hours from", startHour, "to", endHour);
+    // Get selected values from selectors
+    const startSelectVal = document.getElementById('startTime').value;
+    const endSelectVal = document.getElementById('endTime').value;
+    
+    // Convert to numbers
+    const startHour = parseInt(startSelectVal);
+    const endHour = parseInt(endSelectVal);
+    
+    console.log("Start Hour:", startHour);
+    console.log("End Hour:", endHour);
     
     // Rebuild the calendar with the new time range
     buildCalendarTable(startHour, endHour);
 }
 
 // Build the calendar table
-// Build the calendar table
-function buildCalendarTable(startHour = 5, endHour = 19) { // Default 5 AM to 7 PM
+function buildCalendarTable(startHour = 5, endHour = 23) { // Default 5 AM to 11 PM
     calendarGridContainer = document.querySelector('.calendar');
     calendarGridContainer.innerHTML = ""; // Clear previous calendar
     
@@ -78,79 +84,82 @@ function buildCalendarTable(startHour = 5, endHour = 19) { // Default 5 AM to 7 
     let hoursToShow;
     
     // Handle crossing midnight case
-    if (endHour < startHour) {
-        hoursToShow = (24 - startHour) + endHour + 1;
+    if (endHour <= startHour) {
+        hoursToShow = (24 - startHour) + endHour;
     } else {
-        hoursToShow = endHour - startHour + 1; // Include end hour
+        hoursToShow = endHour - startHour;
     }
     
-    console.log("Hours to show:", hoursToShow, "from", startHour, "to", endHour);
+    console.log("Hours to show:", hoursToShow);
     
-    // Create table with fixed layout
-    const table = document.createElement('table');
-    table.style.width = '100%';
-    table.style.height = '100%'; // Take full height of container
-    table.style.tableLayout = 'fixed'; // Fixed layout for equal columns
-    table.style.borderCollapse = 'collapse';
+    // Create a div to hold the table with fixed layout
+    const calendarWrapper = document.createElement('div');
+    calendarWrapper.style.display = 'flex';
+    calendarWrapper.style.flexDirection = 'column';
+    calendarWrapper.style.height = '100%';
+    calendarWrapper.style.width = '100%';
     
-    // Create header row
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    
-    // Create EST header
-    const estHeader = document.createElement('th');
-    estHeader.textContent = 'EST';
-    estHeader.style.border = '1px solid #FFFFFF';
-    estHeader.style.backgroundColor = '#FFFFFF';
-    estHeader.style.padding = '8px';
-    headerRow.appendChild(estHeader);
-    
-    // Get current date and calculate week dates
+    // Get day names and dates for headers
     const today = new Date();
     const dayOfWeek = today.getDay();
     const sunday = new Date(today);
     sunday.setDate(today.getDate() - dayOfWeek);
-    
-    // Create day headers
     const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const dayDates = [];
+    
     for (let i = 0; i < weekDayCount; i++) {
         const day = new Date(sunday);
         day.setDate(sunday.getDate() + i);
-        
-        const dayHeader = document.createElement('th');
-        dayHeader.innerHTML = `${dayNames[i]}<br>${day.getDate()}`;
-
+        dayDates.push(day.getDate());
+    }
+    
+    // Create header row
+    const headerRow = document.createElement('div');
+    headerRow.style.display = 'flex';
+    headerRow.style.width = '100%';
+    headerRow.style.flexShrink = '0';
+    
+    // Create EST header cell
+    const estHeader = document.createElement('div');
+    estHeader.textContent = 'EST';
+    estHeader.style.border = '1px solid #FFFFFF';
+    estHeader.style.backgroundColor = '#FFFFFF';
+    estHeader.style.padding = '8px';
+    estHeader.style.textAlign = 'center';
+    estHeader.style.flex = '0 0 60px'; // Same width as time cells
+    headerRow.appendChild(estHeader);
+    
+    // Create day header cells
+    for (let i = 0; i < weekDayCount; i++) {
+        const dayHeader = document.createElement('div');
+        dayHeader.innerHTML = `${dayNames[i]}<br>${dayDates[i]}`;
+        dayHeader.style.border = '1px solid #FFFFFF';
         dayHeader.style.backgroundColor = '#FFFFFF';
         dayHeader.style.padding = '8px';
+        dayHeader.style.textAlign = 'center';
+        dayHeader.style.flex = '1'; // Same flex as day cells
         headerRow.appendChild(dayHeader);
     }
     
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
+    calendarWrapper.appendChild(headerRow);
     
-    // Create table body
-    const tbody = document.createElement('tbody');
+    // Create body div with flex grow to fill remaining space
+    const bodyDiv = document.createElement('div');
+    bodyDiv.style.flex = '1';
+    bodyDiv.style.display = 'flex';
+    bodyDiv.style.flexDirection = 'column';
+    bodyDiv.style.overflow = 'hidden'; // Prevent scrolling
     
-    // Create an array of all hours to display
-    let hoursArray = [];
-    let hour = startHour;
+    // Create time rows as flex items
     for (let i = 0; i < hoursToShow; i++) {
-        hoursArray.push(hour);
-        hour = (hour + 1) % 24;
-    }
-    
-    console.log("Hours array:", hoursArray);
-    
-    // Calculate row height percentage - this is the key change
-    const rowHeightPercent = 100 / hoursToShow;
-    
-    // Create time rows with equal heights
-    for (let i = 0; i < hoursArray.length; i++) {
-        const currentHour = hoursArray[i];
+        const rowDiv = document.createElement('div');
+        rowDiv.style.display = 'flex';
+        rowDiv.style.flex = '1'; // Each row takes equal space
+        rowDiv.style.width = '100%';
+        rowDiv.style.minHeight = '0'; // Allow shrinking below content size
         
-        const row = document.createElement('tr');
-        // Set height based on percentage of total hours
-        row.style.height = `${rowHeightPercent}%`;
+        // Calculate the current hour (handling 24-hour wrap)
+        const currentHour = (startHour + i) % 24;
         
         // Format the time display (12-hour with AM/PM)
         let displayHour = currentHour % 12;
@@ -158,36 +167,35 @@ function buildCalendarTable(startHour = 5, endHour = 19) { // Default 5 AM to 7 
         const ampm = currentHour >= 12 ? 'PM' : 'AM';
         
         // Create time cell
-        const timeCell = document.createElement('td');
+        const timeCell = document.createElement('div');
         timeCell.textContent = `${displayHour} ${ampm}`;
+        timeCell.style.border = '1px solid #FFFFFF';
         timeCell.style.backgroundColor = '#FFFFFF';
         timeCell.style.padding = '8px';
-        timeCell.style.textAlign = 'center';
-        row.appendChild(timeCell);
+        timeCell.style.display = 'flex';
+        timeCell.style.alignItems = 'center';
+        timeCell.style.justifyContent = 'center';
+        timeCell.style.flex = '0 0 60px'; // Fixed width for time column
+        rowDiv.appendChild(timeCell);
         
         // Create day cells
         for (let j = 0; j < weekDayCount; j++) {
-            const dayCell = document.createElement('td');
+            const dayCell = document.createElement('div');
             dayCell.style.border = '1px solid #e0e0e0';
+            dayCell.style.flex = '1'; // Each day cell takes equal horizontal space
+            dayCell.style.display = 'flex';
+            dayCell.style.alignItems = 'center';
+            dayCell.style.justifyContent = 'center';
             dayCell.setAttribute('data-hour', currentHour);
             dayCell.setAttribute('data-day', j);
-            row.appendChild(dayCell);
+            rowDiv.appendChild(dayCell);
         }
         
-        tbody.appendChild(row);
+        bodyDiv.appendChild(rowDiv);
     }
     
-    table.appendChild(tbody);
-    calendarGridContainer.appendChild(table);
-    
-    // Ensure the containers don't have scrollbars
-    calendarGridContainer.style.overflow = 'hidden';
-    
-    const scheduleCalendar = document.querySelector('.schedule-calendar');
-    if (scheduleCalendar) {
-        scheduleCalendar.style.overflow = 'hidden';
-        scheduleCalendar.style.height = '500px'; // Fixed height
-    }
+    calendarWrapper.appendChild(bodyDiv);
+    calendarGridContainer.appendChild(calendarWrapper);
 }
 
 
