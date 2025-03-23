@@ -89,6 +89,256 @@ td, th {
     text-align: center;
     box-sizing: border-box; /* Include padding in height calculation */
 }
+/* THE VIEW SCHEDULE PART */
+.day-setting label {
+    min-width: 100px;
+}
+
+/* Schedule View Popup Styles */
+.schedule-view-popup {
+    opacity: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transition: all 0.1s ease-in-out;
+    z-index: -1;
+    
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    background-color: rgb(13, 13, 13, 0.8);
+    color: black;
+}
+
+.schedule-view-popup.open {
+    opacity: 1;
+    z-index: 999;
+}
+
+.schedule-view-inner {
+    background-color: white;
+    border-radius: 5px;
+    width: 95%;
+    max-width: 1400px;
+    height: 90vh;
+    overflow: auto;
+    padding: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px; /* Smaller font */
+}
+
+.schedule-table th, .schedule-table td {
+    border: 1px solid #ddd;
+    padding: 6px; /* Reduced padding */
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.schedule-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.schedule-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.close-schedule {
+    float: right;
+    cursor: pointer;
+    font-size: 30px;
+    font-weight: bold;
+    color: #888;
+    transition: color 0.3s ease;
+}
+
+.close-schedule:hover {
+    color: #333;
+}
+
+.week-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #f2f2f2;
+    padding-bottom: 5px;
+}
+
+.week-dates {
+    margin-bottom: 10px;
+    font-style: italic;
+    color: #666;
+    font-size: 12px;
+}.day-setting label {
+    min-width: 100px;
+}
+
+/* Schedule View Popup Styles */
+.schedule-view-popup {
+    opacity: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transition: all 0.1s ease-in-out;
+    z-index: -1;
+    
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    background-color: rgb(13, 13, 13, 0.8);
+    color: black;
+}
+
+.schedule-view-popup.open {
+    opacity: 1;
+    z-index: 999;
+}
+
+.schedule-view-inner {
+    background-color: white;
+    border-radius: 5px;
+    width: 95%; /* Increased from 90% */
+    max-width: 1400px; /* Increased from 1200px */
+    height: 90vh; /* Fixed height to take up most of the screen */
+    max-height: none; /* Remove max-height restriction */
+    overflow: auto;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px; /* Slightly larger font */
+}
+
+.schedule-table th, .schedule-table td {
+    border: 1px solid #ddd;
+    padding: 12px; /* Increased padding */
+    text-align: center;
+}
+
+.schedule-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.schedule-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.close-schedule {
+    float: right;
+    cursor: pointer;
+    font-size: 30px;
+    font-weight: bold;
+    color: #888;
+    transition: color 0.3s ease;
+}
+
+.close-schedule:hover {
+    color: #333;
+}
+
+.week-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #f2f2f2;
+    padding-bottom: 10px;
+}
+
+.week-dates {
+    margin-bottom: 15px;
+    font-style: italic;
+    color: #666;
+}.day-setting label {
+    min-width: 100px;
+}
+
+/* Schedule View Popup Styles */
+.schedule-view-popup {
+    opacity: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transition: all 0.1s ease-in-out;
+    z-index: -1;
+    
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    background-color: rgb(13, 13, 13, 0.8);
+    color: black;
+}
+
+.schedule-view-popup.open {
+    opacity: 1;
+    z-index: 999;
+}
+
+.schedule-view-inner {
+    background-color: white;
+    border-radius: 5px;
+    width: 90%;
+    max-width: 1200px;
+    max-height: 90vh;
+    overflow: auto;
+    padding: 20px;
+}
+
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.schedule-table th, .schedule-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+
+.schedule-table th {
+    background-color: #f2f2f2;
+}
+
+.close-schedule {
+    float: right;
+    cursor: pointer;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.week-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
 
 /* EVERYTHING ON THE RIGHT SIDE */
 .nav-right{
@@ -152,6 +402,29 @@ td, th {
     display: flex;
     justify-content: center;
     gap: 10px;
+}
+.all-day-btn {
+    margin-left: 10px;
+    padding: 5px 10px;
+    background-color: #e9f5f3;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background-color 0.2s;
+}
+
+.all-day-btn:hover {
+    background-color: #d8e8e5;
+}
+
+.days-hours-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
 }
 #close{
     width: 25px;

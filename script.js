@@ -367,12 +367,12 @@ addPersonButton.addEventListener("click", function () {
 
 // Global availability storage
 let peopleAvailability = [];
+
 let sub = [];
 
 closeAvailability.addEventListener("click", function(){
     availabilityPerson.classList.remove("open");
 });
-
 function openAvailability() {
     availabilityPerson.classList.add("open");
     sub = [];
@@ -390,7 +390,7 @@ function openAvailability() {
 
         // Loop through all days and check availability
         Object.keys(person).forEach((day) => {
-            if (day !== "name" && person[day].available) {
+            if (day !== "name" && day !== "numDays" && person[day].available) {
                 sub.push(day); // Store selected days
             }
         });
@@ -404,12 +404,12 @@ function openAvailability() {
     // Generate select elements dynamically
     hoursInput();
 
-    // Restore saved start & end times
+    // Restore saved start & end times after hoursInput() has created the elements
     if (existingPersonIndex !== -1) {
         const person = peopleAvailability[existingPersonIndex];
 
         Object.keys(person).forEach((day) => {
-            if (day !== "name" && person[day].available) {
+            if (day !== "name" && day !== "numDays" && person[day].available) {
                 const startTimeElement = document.getElementById(`startTime-${day}`);
                 const endTimeElement = document.getElementById(`endTime-${day}`);
 
@@ -424,7 +424,6 @@ function openAvailability() {
     updateButtonStyles();
     updateNumDays(savedNumDays); // Pass saved value
 }
-
 
 
 
@@ -546,10 +545,15 @@ function updateNumDays(savedValue = 1) { // Default is 1, but we pass saved valu
         numDaysContainer.appendChild(selectElement);
     }
 }
-
 function hoursInput() {
     const container = document.querySelector(".hours-of-days");
     container.innerHTML = ""; // Clear old days & select inputs
+
+    // Get the calendar's time range
+    const startSelect = document.getElementById('startTime');
+    const endSelect = document.getElementById('endTime');
+    const calendarStartTime = startSelect.options[startSelect.selectedIndex].text;
+    const calendarEndTime = endSelect.options[endSelect.selectedIndex].text;
 
     for (let i = 0; i < sub.length; i++) {
         const divHolderR = document.createElement("div");
@@ -564,15 +568,36 @@ function hoursInput() {
         startTimeSelect.id = `startTime-${sub[i]}`;
         endTimeSelect.id = `endTime-${sub[i]}`;
 
-        // Populate start and end time options
+        // Populate both start and end time options with full AM/PM options
+        // Add AM hours (1-12)
         for (let hour = 1; hour <= 12; hour++) {
-            startTimeSelect.options.add(new Option(hour + " AM", hour + " AM"));
-            endTimeSelect.options.add(new Option(hour + " PM", hour + " PM"));
+            let text = `${hour} AM`;
+            startTimeSelect.options.add(new Option(text, text));
+            endTimeSelect.options.add(new Option(text, text));
         }
+        
+        // Add PM hours (1-12)
+        for (let hour = 1; hour <= 12; hour++) {
+            let text = `${hour} PM`;
+            startTimeSelect.options.add(new Option(text, text));
+            endTimeSelect.options.add(new Option(text, text));
+        }
+
+        // Create "All Day" button
+        const allDayBtn = document.createElement("button");
+        allDayBtn.textContent = "All Day";
+        allDayBtn.className = "all-day-btn";
+        allDayBtn.addEventListener("click", function() {
+            // Set to calendar start/end times
+            startTimeSelect.value = calendarStartTime;
+            endTimeSelect.value = calendarEndTime;
+        });
 
         divHolderR.textContent = sub[i];
         divHolderL.appendChild(startTimeSelect);
+        divHolderL.appendChild(document.createTextNode(" to "));
         divHolderL.appendChild(endTimeSelect);
+        divHolderL.appendChild(allDayBtn);
         divFinal.appendChild(divHolderR);
         divFinal.appendChild(divHolderL);
         divFinal.className = "days-hours-container";
@@ -633,386 +658,463 @@ saveButton.addEventListener("click", function() {
 });
 
 const generateButton = document.querySelector("#generate-schedule");
+// Schedule Generator Algorithm
 
 generateButton.addEventListener("click", function() {
-    // Reset the schedule
-    clearSchedule();
-    
-    // Get the current time range from the time selectors
-    const startTime = document.getElementById('startTime').value;
-    const endTime = document.getElementById('endTime').value;
-    
-    // Parse the time range to determine store hours
-    const storeOpenHour = parseHour(startTime);
-    const storeCloseHour = parseHour(endTime);
-    
-    // Create a blank schedule template
-    const schedule = createBlankSchedule(storeOpenHour, storeCloseHour);
-    
-    // Track who closed the previous day to prevent them from opening
-    let previousDayClosers = [];
-    
-    // Sort people by number of days they can work (ascending)
-    // This ensures people who can work fewer days get priority
-    const sortedPeople = [...peopleAvailability].sort((a, b) => {
-        return (a.numDays || 0) - (b.numDays || 0);
-    });
-    
-    // Days of the week in order
-    const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-    
-    // First pass: Assign people to days based on availability
-    for (const person of sortedPeople) {
-        // Track how many days this person has been scheduled
-        let daysScheduled = 0;
-        const maxDaysToSchedule = person.numDays || 0;
+  // Extract schedule settings from localStorage
+  const settingsString = localStorage.getItem('scheduleSettings');
+  if (!settingsString) {
+      alert("Please configure schedule settings first.");
+      return;
+  }
+  
+  const settings = JSON.parse(settingsString);
+  
+  // Get business hours from the time selectors
+  const startSelect = document.getElementById('startTime');
+  const endSelect = document.getElementById('endTime');
+  const businessStartTime = startSelect.options[startSelect.selectedIndex].text;
+  const businessEndTime = endSelect.options[endSelect.selectedIndex].text;
+  
+  // Convert time strings to numerical values for calculations (hours since midnight)
+  const timeToHours = (timeStr) => {
+      const [hour, period] = timeStr.split(' ');
+      let hourNum = parseInt(hour);
+      if (period === 'PM' && hourNum !== 12) hourNum += 12;
+      if (period === 'AM' && hourNum === 12) hourNum = 0;
+      return hourNum;
+  };
+  
+  const businessStartHour = timeToHours(businessStartTime);
+  const businessEndHour = timeToHours(businessEndTime);
+  const businessHours = businessEndHour - businessStartHour;
+  
+  // Initialize final schedule object
+  const finalSchedule = {
+      sunday: { workers: {} },
+      monday: { workers: {} },
+      tuesday: { workers: {} },
+      wednesday: { workers: {} },
+      thursday: { workers: {} },
+      friday: { workers: {} },
+      saturday: { workers: {} }
+  };
+  
+  // Initialize day-specific worker count limits
+  const workerLimits = {};
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  
+  days.forEach(day => {
+      if (settings.useCustomWorkerSettings && settings.customWorkerSettings[day]) {
+          workerLimits[day] = {
+              min: settings.customWorkerSettings[day].min,
+              max: settings.customWorkerSettings[day].max
+          };
+      } else {
+          workerLimits[day] = {
+              min: settings.minWorkers,
+              max: settings.maxWorkers
+          };
+      }
+      
+      // Initialize worker slots for each hour of the day
+      finalSchedule[day].hourlyWorkers = {};
+      for (let hour = businessStartHour; hour < businessEndHour; hour++) {
+          finalSchedule[day].hourlyWorkers[hour] = [];
+      }
+  });
+  
+  // Prepare the people data for scheduling
+  const eligiblePeople = peopleAvailability.map(person => ({
+      ...person,
+      scheduledDays: 0,
+      scheduledHours: 0,
+      daysScheduled: [],
+      closingPreviousDay: false
+  }));
+  
+  // Helper function to convert time string to hour number
+  const convertTimeToHours = (timeStr) => {
+      if (!timeStr || timeStr === "N/A") return null;
+      
+      const [hourStr, period] = timeStr.split(' ');
+      let hour = parseInt(hourStr);
+      
+      if (period === "PM" && hour !== 12) {
+          hour += 12;
+      } else if (period === "AM" && hour === 12) {
+          hour = 0;
+      }
+      
+      return hour;
+  };
+  
+  // Helper function to convert hour number back to time string
+  const convertHoursToTimeStr = (hour) => {
+      let period = "AM";
+      let displayHour = hour;
+      
+      if (hour >= 12) {
+          period = "PM";
+          if (hour > 12) {
+              displayHour = hour - 12;
+          }
+      }
+      
+      if (hour === 0) {
+          displayHour = 12;
+      }
+      
+      return `${displayHour} ${period}`;
+  };
+  
+  // Process each day of the week
+  for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
+      const currentDay = days[dayIndex];
+      const previousDay = dayIndex > 0 ? days[dayIndex - 1] : days[6];
+      const minWorkers = workerLimits[currentDay].min;
+      const maxWorkers = workerLimits[currentDay].max;
+      
+      // Sort people by:
+      // 1. Those who haven't worked their max days yet
+      // 2. Those who didn't close the previous day
+      // 3. Those with fewer scheduled hours
+      const availablePeople = [...eligiblePeople]
+          .filter(person => {
+              // Filter out those who have reached their maximum days
+              return person.scheduledDays < (person.numDays || 0);
+          })
+          .filter(person => {
+              // Filter out those who aren't available this day
+              return person[currentDay] && person[currentDay].available;
+          })
+          .filter(person => {
+              // Filter out those who closed the previous day
+              if (dayIndex > 0 || dayIndex === 6) { // Skip this check on first day
+                  const prevDay = dayIndex > 0 ? days[dayIndex - 1] : days[6];
+                  const personInPrevDay = finalSchedule[prevDay].workers[person.name];
+                  
+                  if (personInPrevDay) {
+                      const prevEndHour = timeToHours(personInPrevDay.end);
+                      // If they closed the previous day (worked until business end)
+                      return prevEndHour !== businessEndHour;
+                  }
+              }
+              return true;
+          })
+          .sort((a, b) => {
+              // Sort by scheduled hours (ascending)
+              return a.scheduledHours - b.scheduledHours;
+          });
+      
+      // Calculate how many workers we need per hour
+      const workersPerHour = {};
+      for (let hour = businessStartHour; hour < businessEndHour; hour++) {
+          workersPerHour[hour] = {
+              required: minWorkers,
+              assigned: 0
+          };
+      }
+      
+      // First pass: Assign shifts to workers based on their availability
+      for (const person of availablePeople) {
+          // Skip if we've already reached the maximum workers for the day
+          if (Object.keys(finalSchedule[currentDay].workers).length >= maxWorkers) {
+              break;
+          }
+          
+          // Skip if this person has already been scheduled for this day
+          if (finalSchedule[currentDay].workers[person.name]) {
+              continue;
+          }
+          
+          // Get person's availability for the day
+          const startAvailHour = convertTimeToHours(person[currentDay].start);
+          const endAvailHour = convertTimeToHours(person[currentDay].end);
+          
+          if (!startAvailHour || !endAvailHour) continue;
+          
+          // Calculate available hours within business hours
+          const availableStart = Math.max(startAvailHour, businessStartHour);
+          const availableEnd = Math.min(endAvailHour, businessEndHour);
+          const availableHours = availableEnd - availableStart;
+          
+          if (availableHours <= 0) continue;
+          
+          // Determine shift length based on min/max constraints and remaining schedule
+          const remainingHoursToMax = settings.maxHoursPerWorker - person.scheduledHours;
+          let targetShiftLength = Math.min(
+              availableHours,                // Hours the person is available
+              8,                            // Max 8 hours per day
+              remainingHoursToMax,          // Hours left to reach max for this person
+              settings.maxHoursPerWorker    // Max hours per worker from settings
+          );
+          
+          // Ensure we're meeting minimum hours requirement
+          targetShiftLength = Math.max(targetShiftLength, settings.minHoursPerWorker);
+          
+          // If we can't meet minimum hours, skip this person
+          if (targetShiftLength < settings.minHoursPerWorker) {
+              continue;
+          }
+          
+          // Find the best continuous shift
+          let bestShiftStart = -1;
+          let bestCoverage = -1;
+          
+          // Try different shift start times to find optimal coverage
+          for (let shiftStart = availableStart; shiftStart <= availableEnd - targetShiftLength; shiftStart++) {
+              let coverage = 0;
+              
+              // Calculate how many understaffed hours this shift would cover
+              for (let hour = shiftStart; hour < shiftStart + targetShiftLength; hour++) {
+                  if (workersPerHour[hour].assigned < workersPerHour[hour].required) {
+                      coverage++;
+                  }
+              }
+              
+              if (coverage > bestCoverage) {
+                  bestCoverage = coverage;
+                  bestShiftStart = shiftStart;
+              }
+          }
+          
+          // If we found a valid shift start
+          if (bestShiftStart >= 0) {
+              const shiftStart = bestShiftStart;
+              const shiftEnd = shiftStart + targetShiftLength;
+              
+              // Add this person's shift to the schedule
+              finalSchedule[currentDay].workers[person.name] = {
+                  start: convertHoursToTimeStr(shiftStart),
+                  end: convertHoursToTimeStr(shiftEnd),
+                  hours: targetShiftLength
+              };
+              
+              // Update hourly worker assignments
+              for (let hour = shiftStart; hour < shiftEnd; hour++) {
+                  finalSchedule[currentDay].hourlyWorkers[hour].push(person.name);
+                  workersPerHour[hour].assigned++;
+              }
+              
+              // Update person's stats
+              person.scheduledDays++;
+              person.scheduledHours += targetShiftLength;
+              person.daysScheduled.push(currentDay);
+              
+              // Check if this person is closing
+              if (shiftEnd === businessEndHour) {
+                  person.closingPreviousDay = true;
+              } else {
+                  person.closingPreviousDay = false;
+              }
+          }
+      }
+      
+      // Second pass: Ensure we have minimum staffing for each hour
+      // Check if any hour is understaffed
+      let understaffedHours = [];
+      for (let hour = businessStartHour; hour < businessEndHour; hour++) {
+          if (workersPerHour[hour].assigned < workersPerHour[hour].required) {
+              understaffedHours.push({
+                  hour,
+                  needed: workersPerHour[hour].required - workersPerHour[hour].assigned
+              });
+          }
+      }
+      
+      // If we have understaffed hours, try to schedule additional workers
+      if (understaffedHours.length > 0) {
+          // Find additional workers for understaffed hours
+          const additionalWorkers = availablePeople.filter(person => {
+              // Skip if already scheduled for this day
+              return !finalSchedule[currentDay].workers[person.name];
+          });
+          
+          for (const staffNeed of understaffedHours) {
+              const hour = staffNeed.hour;
+              const neededWorkers = staffNeed.needed;
+              
+              for (let i = 0; i < neededWorkers; i++) {
+                  // Find a worker who is available at this hour
+                  const availableWorker = additionalWorkers.find(person => {
+                      const startAvailHour = convertTimeToHours(person[currentDay].start);
+                      const endAvailHour = convertTimeToHours(person[currentDay].end);
+                      
+                      return startAvailHour <= hour && endAvailHour > hour;
+                  });
+                  
+                  if (availableWorker) {
+                      // Remove from additional workers list
+                      const workerIndex = additionalWorkers.indexOf(availableWorker);
+                      additionalWorkers.splice(workerIndex, 1);
+                      
+                      // Get availability for the day
+                      const startAvailHour = convertTimeToHours(availableWorker[currentDay].start);
+                      const endAvailHour = convertTimeToHours(availableWorker[currentDay].end);
+                      
+                      // Calculate shift around the understaffed hour
+                      // Try to create a shift that meets minimum hours
+                      const minHours = settings.minHoursPerWorker;
+                      let shiftStart = hour; // Start at understaffed hour
+                      let shiftEnd = hour + 1; // End after understaffed hour
+                      
+                      // Expand shift to meet minimum hours, respecting availability
+                      while (shiftEnd - shiftStart < minHours) {
+                          // Try to expand end
+                          if (shiftEnd < endAvailHour && shiftEnd < businessEndHour) {
+                              shiftEnd++;
+                          } 
+                          // Try to expand start
+                          else if (shiftStart > startAvailHour && shiftStart > businessStartHour) {
+                              shiftStart--;
+                          } 
+                          // Can't expand further
+                          else {
+                              break;
+                          }
+                      }
+                      
+                      // Only schedule if we can meet minimum hours
+                      const shiftLength = shiftEnd - shiftStart;
+                      if (shiftLength >= minHours) {
+                          // Add to schedule
+                          finalSchedule[currentDay].workers[availableWorker.name] = {
+                              start: convertHoursToTimeStr(shiftStart),
+                              end: convertHoursToTimeStr(shiftEnd),
+                              hours: shiftLength
+                          };
+                          
+                          // Update hourly workers
+                          for (let h = shiftStart; h < shiftEnd; h++) {
+                              finalSchedule[currentDay].hourlyWorkers[h].push(availableWorker.name);
+                              workersPerHour[h].assigned++;
+                          }
+                          
+                          // Update worker stats
+                          availableWorker.scheduledDays++;
+                          availableWorker.scheduledHours += shiftLength;
+                          availableWorker.daysScheduled.push(currentDay);
+                          
+                          // Check if closing
+                          if (shiftEnd === businessEndHour) {
+                              availableWorker.closingPreviousDay = true;
+                          }
+                      }
+                  }
+              }
+          }
+      }
+      
+      // Validate minimum workers per hour requirement
+      let staffingIssues = false;
+      for (let hour = businessStartHour; hour < businessEndHour; hour++) {
+          const hourWorkers = finalSchedule[currentDay].hourlyWorkers[hour];
+          if (hourWorkers.length < minWorkers) {
+              console.warn(`WARNING: ${currentDay} at ${convertHoursToTimeStr(hour)} is understaffed. Need ${minWorkers}, have ${hourWorkers.length}`);
+              staffingIssues = true;
+          }
+      }
+      
+      if (staffingIssues) {
+          console.warn(`${currentDay} has staffing issues. You may need more available workers.`);
+      }
+  }
+  
+  // Clean up the finalSchedule object by removing the hourlyWorkers temporary data
+  for (const day of days) {
+      delete finalSchedule[day].hourlyWorkers;
+  }
+  
+  // Display or store the final schedule
+  console.log("Final Schedule:", finalSchedule);
+  localStorage.setItem('finalSchedule', JSON.stringify(finalSchedule));
+  
+  // Optionally, trigger a function to display the schedule on the page
+  
+  return finalSchedule;
+});
+const viewSchedule = document.querySelector("#view-schedule");
+const scheduleViewPopup = document.getElementById('scheduleViewPopup');
+const closeScheduleView = document.getElementById('closeScheduleView');
+
+function generateWorkerRow(workerName, finalSchedule, days) {
+    const row = document.createElement('tr');
+    const nameCell = document.createElement('td');
+    nameCell.textContent = workerName;
+    row.appendChild(nameCell);
+
+    // Add cells for each day
+    days.forEach(day => {
+        const cell = document.createElement('td');
         
-        // Try to schedule this person for each day of the week
-        for (let dayIndex = 0; dayIndex < daysOfWeek.length; dayIndex++) {
-            // Stop if we've reached the maximum number of days for this person
-            if (daysScheduled >= maxDaysToSchedule) break;
-            
-            const day = daysOfWeek[dayIndex];
-            
-            // Check if this person is available on this day
-            if (person[day] && person[day].available) {
-                // Parse the start and end time for this person on this day
-                const personStartHour = parseHour(person[day].start);
-                const personEndHour = parseHour(person[day].end);
-                
-                // Check if this person was a closer yesterday
-                const isCloserYesterday = previousDayClosers.includes(person.name);
-                const yesterdayIndex = (dayIndex - 1 + 7) % 7; // Handle wrap-around for Sunday
-                const yesterdayName = daysOfWeek[yesterdayIndex];
-                
-                // Skip if this person closed yesterday and would open today
-                if (isCloserYesterday && personStartHour === storeOpenHour) {
-                    continue;
-                }
-                
-                // Try to find a shift for this person
-                let shiftAssigned = false;
-                
-                // Calculate available shift hours
-                let availableHours = Math.min(personEndHour - personStartHour, 8); // Maximum 8 hours per day
-                
-                if (availableHours > 0) {
-                    // Try to find a suitable shift
-                    let bestShiftHour = -1;
-                    let bestShiftNeed = -1;
-                    
-                    // Analyze each hour to find where this person is most needed
-                    for (let hour = personStartHour; hour < personEndHour; hour++) {
-                        // Check how many people are already scheduled for this hour
-                        const currentStaffing = schedule[day][hour].length;
-                        
-                        // Get max staffing for this day (5 for weekends, 4 for weekdays)
-                        const isWeekend = day === "sunday" || day === "saturday";
-                        const maxStaff = isWeekend ? 5 : 4;
-                        
-                        // Skip if we've already reached max staffing for this slot
-                        if (currentStaffing >= maxStaff) continue;
-                        
-                        const needForStaff = 3 - currentStaffing; // Need at least 3 people
-                        
-                        if (needForStaff > bestShiftNeed) {
-                            bestShiftHour = hour;
-                            bestShiftNeed = needForStaff;
-                        }
-                    }
-                    
-                    // If we found a good starting hour, assign a shift
-                    if (bestShiftHour >= 0) {
-                        // Determine shift length (up to 8 hours)
-                        let shiftLength = Math.min(availableHours, 8);
-                        
-                        // Check if we can assign the full shift without exceeding max staff
-                        let canAssignFullShift = true;
-                        for (let hour = bestShiftHour; hour < bestShiftHour + shiftLength && hour < personEndHour; hour++) {
-                            const isWeekend = day === "sunday" || day === "saturday";
-                            const maxStaff = isWeekend ? 5 : 4;
-                            
-                            if (schedule[day][hour].length >= maxStaff) {
-                                canAssignFullShift = false;
-                                break;
-                            }
-                        }
-                        
-                        // If we can't assign the full shift, try to find a partial shift
-                        if (!canAssignFullShift) {
-                            continue;
-                        }
-                        
-                        // Assign the shift
-                        for (let hour = bestShiftHour; hour < bestShiftHour + shiftLength && hour < personEndHour; hour++) {
-                            schedule[day][hour].push(person.name);
-                        }
-                        
-                        // Mark this person as scheduled for this day
-                        daysScheduled++;
-                        shiftAssigned = true;
-                        
-                        // If this person closed the store, add them to the closers list
-                        if (personEndHour === storeCloseHour) {
-                            if (!previousDayClosers.includes(person.name)) {
-                                previousDayClosers.push(person.name);
-                            }
-                        } else {
-                            // Remove from closers list if they didn't close
-                            const index = previousDayClosers.indexOf(person.name);
-                            if (index !== -1) {
-                                previousDayClosers.splice(index, 1);
-                            }
-                        }
-                    }
-                }
-            }
+        // Safely access the schedule
+        if (finalSchedule && 
+            finalSchedule[day] && 
+            finalSchedule[day].workers && 
+            finalSchedule[day].workers[workerName]) {
+            const daySchedule = finalSchedule[day].workers[workerName];
+            cell.textContent = `${daySchedule.start}-${daySchedule.end}`;
         }
+        
+        row.appendChild(cell);
+    });
+
+    return row;
+}
+
+function closeSchedulePopup() {
+    scheduleViewPopup.classList.remove('open');
+}
+
+// View Schedule Button Click Event
+viewSchedule.addEventListener("click", function() {
+    // Get schedule body
+    const scheduleBody = document.getElementById('scheduleBody');
+    scheduleBody.innerHTML = ''; // Clear previous content
+
+    // Retrieve the generated schedule from localStorage
+    const finalScheduleStr = localStorage.getItem('finalSchedule');
+    if (!finalScheduleStr) {
+        alert('No schedule has been generated yet.');
+        return;
     }
+
+    // Parse the schedule
+    const finalSchedule = JSON.parse(finalScheduleStr);
     
-    // Second pass: Ensure minimum staffing levels
-    for (const day of daysOfWeek) {
-        for (let hour = storeOpenHour; hour < storeCloseHour; hour++) {
-            // Get max staffing for this day (5 for weekends, 4 for weekdays)
-            const isWeekend = day === "sunday" || day === "saturday";
-            const maxStaff = isWeekend ? 5 : 4;
-            
-            while (schedule[day][hour].length < 3 && schedule[day][hour].length < maxStaff) {
-                // Find someone who can work this slot and hasn't maxed out their days
-                let bestCandidate = null;
-                
-                for (const person of sortedPeople) {
-                    // Check if this person is available on this day and hour
-                    if (person[day] && person[day].available) {
-                        const personStartHour = parseHour(person[day].start);
-                        const personEndHour = parseHour(person[day].end);
-                        
-                        if (hour >= personStartHour && hour < personEndHour) {
-                            // Check if this person is already scheduled for this hour
-                            if (!schedule[day][hour].includes(person.name)) {
-                                // Count how many days this person is already scheduled
-                                let daysAlreadyScheduled = 0;
-                                for (const d of daysOfWeek) {
-                                    const isScheduledForDay = Object.values(schedule[d]).some(
-                                        hourStaff => hourStaff.includes(person.name)
-                                    );
-                                    if (isScheduledForDay) daysAlreadyScheduled++;
-                                }
-                                
-                                // Check if this person can work more days
-                                if (daysAlreadyScheduled < (person.numDays || 0)) {
-                                    bestCandidate = person.name;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // If we found someone, add them to the schedule
-                if (bestCandidate) {
-                    schedule[day][hour].push(bestCandidate);
-                } else {
-                    // If no one is available, mark this slot as understaffed
-                    schedule[day][hour].push("UNDERSTAFFED");
-                    break;
-                }
-            }
+    // Days of the week for mapping
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+    // Collect all unique workers from the schedule
+    const workersInSchedule = new Set();
+    days.forEach(day => {
+        if (finalSchedule[day] && finalSchedule[day].workers) {
+            Object.keys(finalSchedule[day].workers).forEach(worker => {
+                workersInSchedule.add(worker);
+            });
         }
-    }
-    
-    // Display the schedule
-    renderSchedule(schedule, storeOpenHour, storeCloseHour);
+    });
+
+    // Add rows for each worker
+    workersInSchedule.forEach(worker => {
+        scheduleBody.appendChild(generateWorkerRow(worker, finalSchedule, days));
+    });
+
+    // Show the popup
+    scheduleViewPopup.classList.add('open');
 });
 
-// Helper function to parse hour from time string
-function parseHour(timeString) {
-    if (!timeString) return 0;
-    
-    const hour = parseInt(timeString.split(" ")[0]);
-    const period = timeString.split(" ")[1];
-    
-    // Convert to 24-hour format
-    if (period === "AM") {
-        return hour === 12 ? 0 : hour;
-    } else {
-        return hour === 12 ? 12 : hour + 12;
+// Close button functionality
+closeScheduleView.addEventListener('click', closeSchedulePopup);
+
+// Close popup when clicking outside the modal content
+scheduleViewPopup.addEventListener('click', function(event) {
+    // Check if the click was on the popup overlay (not on the inner content)
+    if (event.target === scheduleViewPopup) {
+        closeSchedulePopup();
     }
-}
-
-// Create a blank schedule template
-function createBlankSchedule(startHour, endHour) {
-    const schedule = {
-        sunday: {},
-        monday: {},
-        tuesday: {},
-        wednesday: {},
-        thursday: {},
-        friday: {},
-        saturday: {}
-    };
-    
-    // Initialize each hour with an empty array
-    for (const day in schedule) {
-        for (let hour = startHour; hour < endHour; hour++) {
-            schedule[day][hour] = [];
-        }
-    }
-    
-    return schedule;
-}
-
-// Clear the current schedule display
-function clearSchedule() {
-    const slots = document.querySelectorAll(".schedule-slot");
-    slots.forEach(slot => {
-        slot.innerHTML = "";
-        slot.style.backgroundColor = "";
-    });
-}
-
-// Render the schedule to the UI
-function renderSchedule(schedule, startHour, endHour) {
-    const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-    
-    for (let dayIndex = 0; dayIndex < daysOfWeek; dayIndex++) {
-        const day = days[dayIndex];
-        
-        for (let hour = startHour; hour < endHour; hour++) {
-            const staff = schedule[day][hour];
-            
-            // Find the corresponding slot in the UI
-            const hourOffset = hour - startHour;
-            const slotIndex = 1 + daysOfWeek + dayIndex + (hourOffset * daysOfWeek);
-            const slot = document.querySelectorAll(".schedule-slot")[dayIndex + (hourOffset * daysOfWeek)];
-            
-            if (slot) {
-                // Clear the slot
-                slot.innerHTML = "";
-                
-                // Add each staff member to the slot
-                staff.forEach(person => {
-                    const personElement = document.createElement("div");
-                    personElement.textContent = person;
-                    personElement.className = "scheduled-person";
-                    
-                    // Mark understaffed slots with red background
-                    if (person === "UNDERSTAFFED") {
-                        personElement.style.color = "red";
-                        personElement.style.fontWeight = "bold";
-                    }
-                    
-                    slot.appendChild(personElement);
-                });
-                
-                // Color code the slot based on staffing level
-                if (staff.length < 3) {
-                    slot.style.backgroundColor = "rgba(255, 0, 0, 0.2)"; // Red for understaffed
-                } else if (staff.length === 3) {
-                    slot.style.backgroundColor = "rgba(0, 255, 0, 0.2)"; // Green for minimum staffing
-                } else {
-                    slot.style.backgroundColor = "rgba(0, 0, 255, 0.2)"; // Blue for overstaffed
-                }
-            }
-        }
-    }
-}
-
-// Test Function: Generate 20 random employees and their availability
-function generateTestEmployees() {
-    const names = [
-        "Alex", "Bailey", "Casey", "Dana", "Eli", 
-        "Fran", "Gray", "Harper", "Indigo", "Jordan", 
-        "Kai", "Logan", "Morgan", "Nico", "Oakley", 
-        "Parker", "Quinn", "Riley", "Sam", "Taylor"
-    ];
-    
-    const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-    const startTimes = ["8 AM", "9 AM", "10 AM", "11 AM", "12 PM"];
-    const endTimes = ["4 PM", "5 PM", "6 PM", "7 PM", "8 PM"];
-    
-    // Clear existing people
-    peopleAvailability = [];
-    
-    // Generate 20 random employees
-    for (let i = 0; i < 20; i++) {
-        const name = names[i];
-        const numDays = 2 + Math.floor(Math.random() * 4); // 2-5 days available
-        
-        const employee = {
-            name: name,
-            numDays: numDays
-        };
-        
-        // Generate random availability for each day
-        for (const day of daysOfWeek) {
-            // 60% chance of being available on any given day
-            const isAvailable = Math.random() < 0.6;
-            
-            if (isAvailable) {
-                const startIndex = Math.floor(Math.random() * startTimes.length);
-                const endIndex = startIndex + 1 + Math.floor(Math.random() * (endTimes.length - startIndex - 1));
-                
-                employee[day] = {
-                    available: true,
-                    start: startTimes[startIndex],
-                    end: endTimes[Math.min(endIndex, endTimes.length - 1)]
-                };
-            } else {
-                employee[day] = {
-                    available: false,
-                    start: "",
-                    end: ""
-                };
-            }
-        }
-        
-        peopleAvailability.push(employee);
-    }
-    
-    return peopleAvailability;
-}
-
-// Test Function: Print schedule to console
-function printSchedule(schedule, startHour, endHour) {
-    const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-    
-    console.log("===== WEEKLY SCHEDULE =====");
-    
-    for (const day of days) {
-        console.log(`\n=== ${day.toUpperCase()} ===`);
-        
-        for (let hour = startHour; hour < endHour; hour++) {
-            // Format the hour
-            let formattedHour;
-            if (hour < 12) {
-                formattedHour = `${hour} AM`;
-            } else if (hour === 12) {
-                formattedHour = "12 PM";
-            } else {
-                formattedHour = `${hour - 12} PM`;
-            }
-            
-            const staff = schedule[day][hour];
-            console.log(`${formattedHour}: ${staff.join(", ") || "UNDERSTAFFED"}`);
-        }
-    }
-}
-
-// Test Function: Run the test
-function runScheduleTest() {
-    // Generate test employees
-    const testEmployees = generateTestEmployees();
-    console.log("Generated 20 test employees:");
-    console.log(testEmployees);
-    
-    // Set store hours
-    const storeOpenHour = 8; // 8 AM
-    const storeCloseHour = 20; // 8 PM
-    
-    // Create a blank schedule
-    const schedule = createBlankSchedule(storeOpenHour, storeCloseHour);
-}
+});
 
 
 window.onload = function(){

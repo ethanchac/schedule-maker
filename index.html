@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
     <title>Schedule</title>
 </head>
 <body>
@@ -28,6 +29,34 @@
                 <div class="schedule-calendar">
                     <div class="calendar"></div>
                 </div>
+                <button id="view-schedule">View Schedule</button>
+                <div id="scheduleViewPopup" class="schedule-view-popup">
+                    <div class="schedule-view-inner">
+                        <div class="week-header">
+                            <h2>{CAFE NAME} SCHEDULE GUIDE</h2>
+                            <span id="closeScheduleView" class="close-schedule">&times;</span>
+                        </div>
+                        <div class="week-dates">Week 5: 3/10/2025 - 3/16/2025</div>
+                        <table class="schedule-table" id="scheduleTable">
+                            <thead>
+                                <tr>
+                                    <th>NAME OF EMPLOY</th>
+                                    <th>MONDAY 3/10/2025</th>
+                                    <th>TUESDAY 3/11/2025</th>
+                                    <th>WEDNESDAY 3/12/2025</th>
+                                    <th>THURSDAY 3/13/2025</th>
+                                    <th>FRIDAY 3/14/2025</th>
+                                    <th>SATURDAY 3/15/2025</th>
+                                    <th>SUNDAY 3/16/2025</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scheduleBody">
+                                <!-- Schedule rows will be dynamically populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
             </div>
         </div>
         <div class="nav-right">
